@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfect Pixel Car Game</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #808080; text-align: center; }
+        canvas { display: block; background: #444; margin: auto; }
+        #gameOver {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px; font-family: Arial, sans-serif;
+            color: white; background: red;
+            padding: 10px; display: none;
+        }
+        .controls { 
+            display: flex; justify-content: center; 
+            gap: 10px; margin-top: 10px; 
+        }
+        .btn {
+            width: 60px; height: 60px;
+            font-size: 24px; font-weight: bold;
+            border: none; background: black; color: white;
+            border-radius: 50%; cursor: pointer;
+        }
+        .btn:active { background: gray; }
+        #restart {
+            display: none;
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 20px;
+            background: green; color: white;
+            border: none; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="gameCanvas"></canvas>
+    <div id="gameOver">🚨 Game Over! Refresh to Restart 🚨</div>
+    <button id="restart">🔄 Restart</button>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button class="btn" id="left">⬅</button>
+        <button class="btn" id="right">➡</button>
+        <button class="btn" id="down">⬇</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const gameOverText = document.getElementById("gameOver");
+        const restartBtn = document.getElementById("restart");
+
+        canvas.width = 400;
+        canvas.height = 600;
+
+        let car = { x: 175, y: 500, size: 10 };
+        let speed = 10;
+        let obstacles = [];
+        let gameRunning = true;
+
+        // Colors
+        const R = "#CC0000", B = "#000000", Y = "#FFFF00", W = "#5555FF", L = "#FF0000";
+
+        function drawPixel(x, y, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(car.x + x * car.size, car.y + y * car.size, car.size, car.size);
+        }
+
+        function drawCar() {
+            drawPixel(2, 0, Y); drawPixel(3, 0, Y);
+            for (let c = 1; c <= 5; c++) drawPixel(c, 1, R);
+            drawPixel(1, 2, R); for (let c = 2; c <= 4; c++) drawPixel(c, 2, W);
+            drawPixel(5, 2, R); drawPixel(1, 3, R);
+            for (let c = 2; c <= 4; c++) drawPixel(c, 3, W);
+            drawPixel(5, 3, R);
+            for (let c = 0; c <= 6; c++) drawPixel(c, 4, R);
+            drawPixel(0, 5, B); for (let c = 1; c <= 5; c++) drawPixel(c, 5, R);
+            drawPixel(6, 5, B); drawPixel(0, 6, B);
+            for (let c = 1; c <= 5; c++) drawPixel(c, 6, R);
+            drawPixel(6, 6, B);
+            for (let c = 1; c <= 5; c++) drawPixel(c, 7, R);
+            drawPixel(2, 8, L); drawPixel(3, 8, R); drawPixel(4, 8, L);
+        }
+
+        function drawObstacle(obstacle) {
+            ctx.fillStyle = "black";
+            ctx.fillRect(obstacle.x, obstacle.y, 50, 20);
+        }
+
+        function updateObstacles() {
+            for (let i = 0; i < obstacles.length; i++) {
+                obstacles[i].y += 5;
+                if (obstacles[i].y > canvas.height) {
+                    obstacles.splice(i, 1);
+                }
+
+                if (
+                    obstacles[i] &&
+                    car.y < obstacles[i].y + 20 &&
+                    car.y + car.size * 9 > obstacles[i].y &&
+                    car.x < obstacles[i].x + 50 &&
+                    car.x + car.size * 7 > obstacles[i].x
+                ) {
+                    gameRunning = false;
+                    gameOverText.style.display = "block";
+                    restartBtn.style.display = "block";
+                }
+            }
+        }
+
+        function update() {
+            if (!gameRunning) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawCar();
+            updateObstacles();
+            obstacles.forEach(drawObstacle);
+            requestAnimationFrame(update);
+        }
+
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "ArrowLeft" && car.x > 0) car.x -= speed;
+            else if (event.key === "ArrowRight" && car.x < canvas.width - car.size * 7) car.x += speed;
+            else if (event.key === "ArrowDown" && car.y < canvas.height - car.size * 9) car.y += speed;
+        });
+
+        document.getElementById("left").addEventListener("click", () => {
+            if (car.x > 0) car.x -= speed;
+        });
+
+        document.getElementById("right").addEventListener("click", () => {
+            if (car.x < canvas.width - car.size * 7) car.x += speed;
+        });
+
+        document.getElementById("down").addEventListener("click", () => {
+            if (car.y < canvas.height - car.size * 9) car.y += speed;
+        });
+
+        setInterval(() => {
+            obstacles.push({ x: Math.random() * (canvas.width - 50), y: -20 });
+        }, 1500);
+
+        restartBtn.addEventListener("click", () => {
+            car = { x: 175, y: 500, size: 10 };
+            obstacles = [];
+            gameRunning = true;
+            gameOverText.style.display = "none";
+            restartBtn.style.display = "none";
+            update();
+        });
+
+        update();
+    </script>
+</body>
+</html>
